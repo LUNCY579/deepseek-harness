@@ -68,6 +68,8 @@ export function findUnknownCasts(file: string, text: string): UnknownCast[] {
 function isSource(file: string): boolean {
   return /\.(?:[cm]?[jt]s|[jt]sx)$/u.test(file)
     && !file.startsWith('vendor/')
+    // Imported plugin sources retain their upstream type conventions.
+    && !file.startsWith('plugins/our-free-model/')
     && !file.startsWith('.agents/notes/archived/')
 }
 

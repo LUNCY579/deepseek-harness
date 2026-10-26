@@ -236,6 +236,16 @@ describe('unknown assertion source discovery', () => {
     expect(verifyNoUnknownCasts(root)).toBe(0)
   })
 
+  it('excludes only the imported plugin subtree and keeps adjacent integration source strict', () => {
+    const root = fixture()
+    write(root, 'plugins/our-free-model/vendor/channel-pack/src/adapter.ts', assertion)
+    const checked = ['plugins/our-free-model-tools/adapter.ts', 'plugins/other/adapter.ts', 'scripts/our-free-model.ts']
+    for (const file of checked) write(root, file, assertion)
+    git(root, 'add', '.')
+    expect(scanUnknownCasts(root).map(cast => cast.file)).toEqual(checked.toSorted())
+    expect(() => verifyNoUnknownCasts(root)).toThrow('scripts/our-free-model.ts:1')
+  })
+
   it.each(['packages', 'apps', 'scripts', 'website'])('rejects discovery missing %s', (area) => {
     const root = fixture()
     unlinkSync(join(root, `${area}/seed.ts`))

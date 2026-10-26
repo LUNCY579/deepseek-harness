@@ -1,0 +1,65 @@
+name: Our Free Model integration
+
+on:
+  pull_request:
+    paths:
+      - 'plugins/our-free-model/**'
+      - 'plugins/our-free-model-assets/**'
+      - 'plugins/our-free-model.import.json'
+      - 'scripts/prepare-our-free-model.*'
+      - 'packages/llm/llm/**'
+      - 'packages/interaction/commands/**'
+      - 'packages/credentials/credentials/**'
+      - 'packages/client/modules/**'
+      - 'packages/boot/app-boot/**'
+      - 'vendor/cordis/**'
+      - 'apps/cli/src/**'
+      - 'apps/cli/config/examples/our-free-model.patch.yml'
+      - 'apps/cli/tests/profiles/our-free-model.spec.ts'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/our-free-model.yml'
+  push:
+    branches: [master]
+    paths:
+      - 'plugins/our-free-model/**'
+      - 'plugins/our-free-model-assets/**'
+      - 'plugins/our-free-model.import.json'
+      - 'scripts/prepare-our-free-model.*'
+      - 'packages/llm/llm/**'
+      - 'packages/interaction/commands/**'
+      - 'packages/credentials/credentials/**'
+      - 'packages/client/modules/**'
+      - 'packages/boot/app-boot/**'
+      - 'vendor/cordis/**'
+      - 'apps/cli/src/**'
+      - 'apps/cli/config/examples/our-free-model.patch.yml'
+      - 'apps/cli/tests/profiles/our-free-model.spec.ts'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/our-free-model.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  local-plugin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v5.0.0
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '24.22.1'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+      - run: pnpm exec vitest run apps/cli/tests/profiles/our-free-model.spec.ts
+      - run: pnpm exec vitest run scripts/prepare-our-free-model.spec.ts
+      - run: pnpm run typecheck:our-free-model
+      # Contributor mode exercises code without the original publisher's release key.
+      - run: pnpm run test:our-free-model

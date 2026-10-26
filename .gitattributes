@@ -7,6 +7,10 @@
 *.cmd text eol=crlf
 
 *.pdf binary
+plugins/our-free-model-assets/*.gz.part* binary
+
+# Preserve the imported document's existing final blank line byte-for-byte.
+plugins/our-free-model/docs/free-lane-wire.md whitespace=-blank-at-eof
 
 # The persistence catalog is the readable projection of these generated schemas.
 docs/persistence-schema.json linguist-generated=true

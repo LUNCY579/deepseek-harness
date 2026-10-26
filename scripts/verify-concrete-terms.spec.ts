@@ -64,6 +64,19 @@ describe('concrete terminology policy', () => {
     )).toEqual([{ file: '.agents/notes/implemented/process/current.md', line: 1 }])
   })
 
+  it('preserves imported plugin identifiers while checking adjacent Harness files', () => {
+    expect(findConcreteTermViolations(`plugins/our-free-model/catalog/${blockedTerm}.json`, blockedTerm)).toEqual([])
+    for (const file of [
+      'plugins/README.md',
+      'plugins/our-free-model-tools/index.ts',
+      'plugins/other/index.ts',
+      'scripts/our-free-model.ts',
+      'docs/user/our-free-model.md',
+    ]) {
+      expect(findConcreteTermViolations(file, blockedTerm)).toEqual([{ file, line: 1 }])
+    }
+  })
+
   it('preserves historical identifiers only in alpha and RC release schema snapshots', () => {
     for (const channel of ['alpha', 'rc']) {
       expect(findConcreteTermViolations(

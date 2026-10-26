@@ -1,0 +1,7 @@
+# Load the checked-in Host entry and its owning package's browser module.
+# Git owns these source files; the plugin must not replace them through its updater.
+- insert:
+    - id: our-free-model
+      name: '../../../../plugins/our-free-model/index.js'
+      config:
+        distribution: managed

@@ -8,6 +8,8 @@ It is built on an **everything-is-a-plugin** architecture and powered by [Cordis
 
 Documentation: [https://deepseek-harness.github.io/deepseek-harness/](https://deepseek-harness.github.io/deepseek-harness/)
 
+This fork combines Harness and the Our Free Model plugin in one checkout. `pnpm start` launches their combined Web UI; the [experiment guide](docs/user/our-free-model.md) covers the source layout, local development, and plugin checks.
+
 ## Developer preview
 
 DeepSeek Harness is in _developer preview_ and iterating rapidly. **THERE WILL BE COMPATIBILITY-BREAKING CHANGES.**
@@ -16,7 +18,7 @@ Review the [safety notice](SAFETY.md) before running the project.
 
 ## Run
 
-### Run from `npm`
+### Run the upstream application from `npm`
 
 Install `Node.js`, then run:
 
@@ -28,17 +30,17 @@ The command starts the Web UI at `http://127.0.0.1:3080` by default and opens it
 
 ### Run from source
 
-To run from a repository checkout:
+Use Node.js 24.9 or newer and the pnpm version pinned in `package.json`. To run this combined repository:
 
 ```sh
-git clone https://github.com/deepseek-ai/deepseek-harness.git
+git clone https://github.com/LUNCY579/deepseek-harness.git
 cd deepseek-harness
 pnpm install
 pnpm run build
-pnpm dsh web
+pnpm start
 ```
 
-`pnpm run build` prepares the repository artifacts. `pnpm dsh web` uses those built artifacts without rebuilding.
+`pnpm run build` prepares the repository artifacts. `pnpm start` uses those artifacts and loads the plugin directly from `plugins/our-free-model/`. The plugin source is included; no second checkout or separate plugin installation is needed.
 
 ## Community and support
 
@@ -54,7 +56,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Start with the [development guide](docs/development.md) and [architecture documentation](docs/architecture.md).
 
-`pnpm run dev:web` builds, serves, and rebuilds client bundles on source edits in one terminal, and `make help` lists the matching Make targets for Web and Desktop; the guide's application commands section owns the full table.
+`pnpm run dev:our-free-model` starts the combined development workflow. See the [experiment guide](docs/user/our-free-model.md#edit-and-check) for restart requirements and offline checks. The existing `dev:web` and Make targets remain available for Harness development.
 
 For agents, follow [AGENTS.md](AGENTS.md).
 

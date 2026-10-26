@@ -1,0 +1,22 @@
+{
+  "path": "plugins/our-free-model",
+  "sourceRepository": "https://github.com/LUNCY579/dsh-our-free-model",
+  "upstreamRepository": "https://github.com/Ebony-Vinyl/dsh-our-free-model",
+  "sourceRef": "main",
+  "sourceCommit": "e164fea59e0293ab6284fd62d25d3ab8a4f459ce",
+  "sourceTree": "d700a2b384ddf5175f6e62a738d73ad4c60233f8",
+  "version": "2.7.1",
+  "trackedFiles": 686,
+  "license": "MIT",
+  "importMethod": "Git tree snapshot with the local adaptations listed below; no nested Git repository or submodule.",
+  "localChanges": [
+    "The Windows Magpie executable is stored in 17 consecutive gzip archive parts, plugins/our-free-model-assets/magpie-win32-x64.exe.gz.part01 through magpie-win32-x64.exe.gz.part17, and restored byte-for-byte with SHA-256 verification by scripts/prepare-our-free-model.mjs during pnpm install without downloading the executable.",
+    "scripts/forward-test.mjs uses a scoped DNS fixture instead of public DNS for its offline routable-address rejection test.",
+    "scripts/channel-pack-test.mjs replaces the removed optional LLM invariant test plugin with equivalent explicit stream assertions and the current public lossless stream recorder.",
+    "src/subscriptions.js requires OUR_FREE_MODEL_GEMINI_CLIENT_SECRET only when imported Gemini CLI subscription credentials need token refresh, retaining the default public client ID without an embedded client secret.",
+    "vendor/channel-pack/src/gemini-oauth.ts requires CMDC_PAK_GOOGLE_CLIENT_SECRET for Gemini login or token refresh, retaining the default public client ID and optional CMDC_PAK_GOOGLE_CLIENT_ID override without an embedded client secret.",
+    "vendor/channel-pack/pack.js and packages/standalone/channels/business.mjs are regenerated with the original build tooling to include the Gemini OAuth configuration changes.",
+    "scripts/subscriptions-test.mjs, scripts/channel-pack-test.mjs, and scripts/channel-network-test.mjs use isolated OAuth client fixtures and verify missing/configured client-secret behavior."
+  ],
+  "updatePolicy": "Review and commit plugin changes in this repository. The source overlay enforces managed distribution; upstream self-update is disabled."
+}

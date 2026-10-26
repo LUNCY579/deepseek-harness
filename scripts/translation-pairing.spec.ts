@@ -1,7 +1,7 @@
 /** Regression tests for bilingual snapshots, corpus scope, and structure. */
 
 import { execFileSync, spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -101,6 +101,16 @@ describe('translation pairing index reads', () => {
 })
 
 describe('translation pairing manifest', () => {
+  it('preserves imported plugin documentation without excluding the Harness integration guide or sibling READMEs', () => {
+    const manifest = parseTranslationPairingManifest(readFileSync(new URL('./translation-pairing.manifest.json', import.meta.url), 'utf8'))
+    const included = translationPairSourcePredicate(manifest)
+    expect(included('plugins/our-free-model/README.md')).toBe(false)
+    expect(included('plugins/our-free-model/packages/desktop/README.md')).toBe(false)
+    for (const file of ['plugins/README.md', 'plugins/our-free-model-tools/README.md', 'docs/user/our-free-model.md']) {
+      expect(included(file)).toBe(true)
+    }
+  })
+
   it('accepts an exclusions-only manifest', () => {
     const manifest = parseTranslationPairingManifest(JSON.stringify({
       excluded: ['docs/generated/'],

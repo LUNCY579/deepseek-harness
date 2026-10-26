@@ -8,6 +8,8 @@ DeepSeek Harness（`dsh`）是由 [DeepSeek AI](https://deepseek.com) 开发的�
 
 文档：[https://deepseek-harness.github.io/deepseek-harness/](https://deepseek-harness.github.io/deepseek-harness/)
 
+本 fork 将 Harness 与 Our Free Model 插件合并到同一份源码中。`pnpm start` 会启动两者组合的 Web UI；[实验指南](docs/user/our-free-model.zh.md)介绍源码布局、本地开发和插件检查。
+
 ## 开发者预览
 
 DeepSeek Harness 处于 _开发者预览_ 阶段，正在快速迭代。**未来将出现破坏兼容性的变更。**
@@ -18,7 +20,7 @@ DeepSeek Harness 处于 _开发者预览_ 阶段，正在快速迭代。**未来
 
 ## 运行
 
-### 通过 `npm` 运行
+### 通过 `npm` 运行上游应用
 
 安装 `Node.js`，然后运行：
 
@@ -32,17 +34,17 @@ npx @deepseek-ai/dsh web
 
 ### 从源码运行
 
-如需从仓库源码运行：
+请使用 Node.js 24.9 或更新版本，以及 `package.json` 固定的 pnpm 版本。如需运行本合并仓库：
 
 ```sh
-git clone https://github.com/deepseek-ai/deepseek-harness.git
+git clone https://github.com/LUNCY579/deepseek-harness.git
 cd deepseek-harness
 pnpm install
 pnpm run build
-pnpm dsh web
+pnpm start
 ```
 
-`pnpm run build` 会准备仓库产物。`pnpm dsh web` 会直接使用这些已构建产物，不会重新构建。
+`pnpm run build` 会准备仓库产物。`pnpm start` 会使用这些产物，并直接加载 `plugins/our-free-model/` 中的插件。插件源码已经包含在仓库中，无需再克隆或单独安装插件。
 
 ## 社区与支持
 
@@ -73,7 +75,7 @@ pnpm dsh web
 
 请先阅读[开发指南](docs/development.zh.md)与[架构文档](docs/architecture.zh.md)。
 
-`pnpm run dev:web` 会在一个终端里完成构建、启动，并在源码修改时重建 client bundle；`make help` 列出 Web 与 Desktop 对应的 Make target。完整表格见开发指南的「应用命令」一节。
+`pnpm run dev:our-free-model` 会启动组合开发流程。重启要求和离线检查见[实验指南](docs/user/our-free-model.zh.md#edit-and-check)。现有的 `dev:web` 和 Make target 仍可用于 Harness 开发。
 
 面向 agent：请遵循 [AGENTS.md](AGENTS.md)。
 

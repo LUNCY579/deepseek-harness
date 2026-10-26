@@ -40,6 +40,8 @@ apps/web/dist/
 .artifacts/
 .dsh-build/
 .dsh-report/
+.dsh-experiments/
+/plugins/our-free-model/vendor/magpie/bin/magpie-win32-x64.exe
 .playwright-mcp/
 .orig
 .worktrees/

@@ -1,0 +1,25 @@
+# Bilingual-pair consistency record for our-free-model.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/user/our-free-model.md
+/experiment-with-harness-and-our-free-model:
+  en: 5e671f29a8ff834f
+  zh: 36ecd5a6a260e6a4
+/experiment-with-harness-and-our-free-model/summary:
+  en: 025aabf5ae1e91cf
+  zh: f308b518a50af78e
+/experiment-with-harness-and-our-free-model/contents:
+  en: 2d6f829ec60aade5
+  zh: 13c6af365865efd1
+/experiment-with-harness-and-our-free-model/start-the-combined-application:
+  en: 8e9f9b2a979e5fb8
+  zh: 51af29f7a9e996f5
+/experiment-with-harness-and-our-free-model/edit-and-check:
+  en: cbd3c1513ad437b1
+  zh: c0981fa1b2ebd064
+/experiment-with-harness-and-our-free-model/source-and-update-ownership:
+  en: 90af7811c7040687
+  zh: 66c6566f575a905d
+/experiment-with-harness-and-our-free-model/limitations:
+  en: f5da279b0054f83a
+  zh: 65f4c682b071623a

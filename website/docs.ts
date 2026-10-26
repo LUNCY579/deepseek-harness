@@ -186,6 +186,14 @@ const homeAndGuide = pairedPages([
     section: { root: '集成', en: 'Integrations' },
     order: 1,
   },
+  {
+    source: 'docs/user/our-free-model.md',
+    route: 'guide/our-free-model.md',
+    label: { root: 'Our Free Model 实验', en: 'Our Free Model experiments' },
+    sidebar: { root: 'zh-guide', en: 'en-guide' },
+    section: { root: '集成', en: 'Integrations' },
+    order: 3,
+  },
 ])
 
 const develop = pairedPages([

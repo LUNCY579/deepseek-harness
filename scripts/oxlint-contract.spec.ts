@@ -5,7 +5,7 @@
 import { spawnSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { existsSync } from 'node:fs'
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { flattenDiagnosticMessageText, parseConfigFileTextToJson } from 'typescript'
@@ -50,6 +50,39 @@ async function writeContractConfig(suffix: string): Promise<string> {
 }
 
 describe('Oxlint executable contract', () => {
+  it('ignores imported plugin source in both lint modes while checking sibling source and integration scripts', async () => {
+    const directories: string[] = []
+    const gluePath = join(repositoryRoot, 'scripts', `plugin-import-probe-${randomUUID()}.ts`)
+    try {
+      const imported = await mkdtemp(join(repositoryRoot, 'plugins/our-free-model/.lint-probe-'))
+      directories.push(imported)
+      const sibling = await mkdtemp(join(repositoryRoot, 'plugins/our-free-model-tools-'))
+      directories.push(sibling)
+      const importedPath = join(imported, 'invalid.ts')
+      const siblingPath = join(sibling, 'invalid.ts')
+      await Promise.all([importedPath, siblingPath, gluePath].map(path => writeFile(path, 'const =\n')))
+      for (const config of ['.oxlintrc.json', '.oxlintrc.staged.json']) {
+        const result = runOxlint([
+          '--config', config, '--format', 'unix', '--no-error-on-unmatched-pattern',
+          ...[importedPath, siblingPath, gluePath].map(path => relative(repositoryRoot, path)),
+        ])
+        const output = normalizedOutput(result)
+        expect(result.error).toBeUndefined()
+        expect(result.signal).toBeNull()
+        expect(result.status, output).toBe(1)
+        expect(output).not.toContain(relative(repositoryRoot, importedPath).replaceAll('\\', '/'))
+        for (const path of [siblingPath, gluePath]) {
+          expect(output).toContain(relative(repositoryRoot, path).replaceAll('\\', '/'))
+        }
+      }
+    } finally {
+      await Promise.all([
+        ...directories.map(path => rm(path, { recursive: true, force: true })),
+        rm(gluePath, { force: true }),
+      ])
+    }
+  }, 90_000)
+
   it('discovers the owning TypeScript project for every file class', async () => {
     const suffix = randomUUID()
     const configPath = await writeContractConfig(suffix)
