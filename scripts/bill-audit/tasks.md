@@ -49,6 +49,24 @@ edits leak into a treatment run.
 - Record in each run's `success.md`: model id, run timestamp (UTC), arm,
   permission mode, and whether the run succeeded.
 
+## Pristine demo-target note (read before judging any run)
+
+A fresh `demo-target/` has exactly two failing tests, and they belong
+to two different tasks (see `demo-target/README.md` for the full
+account):
+
+- `sumRange` in `test/util.test.js` fails on its own (off-by-one) —
+  task T2's failure.
+- `registry-b` in `test/registry-b.test.js` fails only in the full
+  suite (on-disk registry state written by `registry-a`) — task T7's
+  failure. Every other pristine test passes.
+
+Therefore, where a task below says "suite green", read it as: the
+task's own tests pass and no previously-passing test breaks. The two
+pristine failures do not count against a task unless that task is the
+one that owns that failure. Full-suite green is the combined T2+T7
+outcome, not the bar for T1, T3, T4, T5, T6, or T8 on their own.
+
 ## Tasks (prompt text is fixed — paste verbatim)
 
 ### T1 — Explore and report (read-heavy)
@@ -61,7 +79,9 @@ validation statement; no source file changed.
 ### T2 — Fix the failing test (diagnose + fix)
 Prompt: "The test suite has one failing test. Find the bug, fix it, and make
 the suite green without changing any test file."
-Success: suite green; only source files changed.
+Success: the `sumRange` test passes; only source files changed.
+(See the Pristine note: full-suite green additionally requires the
+T7 registry fix, and is not the T2 bar on its own.)
 
 ### T3 — Add a CLI flag (feature)
 Prompt: "Add a --json flag to the CLI that prints the result as JSON.
@@ -87,7 +107,10 @@ Success: new test file exists covering all three paths; suite green.
 ### T7 — Diagnose suite-only failure (debugging)
 Prompt: "The suite fails when run in full but passes file by file. Diagnose
 why, fix it, and write a one-paragraph root-cause note to FIX.md."
-Success: full suite green; FIX.md states the true root cause (shared state).
+Success: the `registry-b` test passes in the full suite; FIX.md states
+the true root cause (shared on-disk registry state). (See the Pristine
+note: full-suite green additionally requires the T2 `sumRange` fix,
+and is not the T7 bar on its own.)
 
 ### T8 — Rename across the codebase (multi-file sweep)
 Prompt: "Rename `formatUser` to `formatAccount` everywhere, including docs
