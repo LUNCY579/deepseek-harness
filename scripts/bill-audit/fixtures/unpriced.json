@@ -1,0 +1,1 @@
+{"events":[{"data":{"model":"some-unknown-model","provider":"Unknown"},"seq":1,"type":"request/context"},{"data":{"blocks":[],"step":0,"timestamp":"2026-10-26T15:00:00Z","turn":0,"usage":{"inputTokens":1000,"outputTokens":100}},"seq":2,"type":"assistant/message"}]}

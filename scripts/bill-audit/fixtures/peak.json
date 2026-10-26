@@ -1,0 +1,1 @@
+{"events":[{"data":{"model":"deepseek-flash","provider":"DeepSeek"},"seq":1,"type":"request/context"},{"data":{"blocks":[],"step":0,"timestamp":"2026-10-26T02:00:00Z","turn":0,"usage":{"cacheReadTokens":5000,"inputTokens":10000,"outputTokens":2000}},"seq":2,"type":"assistant/message"}]}
