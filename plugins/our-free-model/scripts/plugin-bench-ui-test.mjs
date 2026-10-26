@@ -129,9 +129,10 @@ await check('listing stays selectable and does not imply verified inference; man
 })
 for (const persisted of [true, false]) {
   await check('benchmark waits 330s, refreshes summary and keeps success when persisted=' + persisted, async () => {
-    const summary = { catalog: [{ id: 'listing', availability: 'available', availabilitySource: 'listing' }], settings: {} }
+    const summary = { catalog: [{ id: 'fixture', name: 'Fixture', route: 'our-free-model', availability: 'available', availabilitySource: 'listing' }], settings: {} }
+    const response = 'OK\n<em>Model output stays plain text.</em>'
     const app = boot({ fetchImpl: endpoint => endpoint === '/summary' ? summary : endpoint === '/bench'
-      ? { ttftMs: 123, tokensPerSecond: 45, reasoningTokens: 6, persisted } : {} })
+      ? { ttftMs: 123, tokensPerSecond: 45, reasoningTokens: 6, text: response, persisted } : {} })
     const props = { t: app.t }, draw = () => app.draw(app.api.SettingsPage, props)
     draw(); await tick(); let tree = draw()
     assert.equal(tree.props.counts.available ?? 0, 0, 'listing must not enter the confirmed-available count')
@@ -142,6 +143,15 @@ for (const persisted of [true, false]) {
     assert.equal(tree.props.benches.fixture.running, false)
     assert.match(tree.props.benches.fixture.result, /文本响应通过.*123.*45/)
     assert.equal(tree.props.benches.fixture.result.includes('结果未能保存'), !persisted)
+    assert.equal(tree.props.benches.fixture.response, response)
+    const roster = app.api.Roster({ summary, t: app.t, onBench: tree.props.bench, benches: tree.props.benches })
+    const card = flatten(roster).find(node => node?.type === app.api.ModelCard)
+    const visible = flatten(app.api.ModelCard(card.props))
+    assert.ok(visible.includes(app.t('bench.response')))
+    assert.ok(visible.includes(response), 'the actual response reaches the model card through the roster')
+    assert.equal(visible.find(node => node?.type === 'pre').children[0], response)
+    assert.ok(!visible.some(node => node?.type === 'em' || node?.props?.dangerouslySetInnerHTML), 'provider text is never rendered as HTML')
+    assert.ok(visible.some(node => node?.props?.role === 'status' && node.children.includes(tree.props.benches.fixture.result)))
     assert.ok(!app.calls.some(call => call.endpoint === '/settings'), 'Benchmarks do not change service settings')
     app.dispose()
   })
@@ -154,6 +164,57 @@ await check('a failed benchmark releases its busy state, keeps the error and ref
   const result = draw().props.benches.fixture
   assert.equal(result.running, false); assert.equal(result.result, 'No visible text')
   assert.ok(app.calls.filter(call => call.endpoint === '/summary').length >= 2); app.dispose()
+})
+
+await check('first-call guidance names the fixed prompt and the chat path in both languages', () => {
+  const app = boot()
+  for (const locale of ['en', 'zh']) {
+    const t = Object.assign(key => app.api.DICT[locale][key] ?? key, { locale })
+    const nodes = flatten(app.api.Roster({ summary: { catalog: [], settings: {} }, t, onBench() {} }))
+    for (const key of ['bench.tryTitle', 'bench.tryHint', 'bench.promptLabel', 'bench.chatHint']) assert.ok(nodes.includes(t(key)))
+    assert.ok(nodes.includes('Reply with exactly: OK'))
+  }
+  app.dispose()
+})
+await check('repeated clicks make one request and a failed retry cannot display the previous response', async () => {
+  let complete
+  let reply = () => new Promise(resolve => { complete = resolve })
+  const app = boot({ fetchImpl: endpoint => endpoint === '/summary' ? { catalog: [], settings: {} }
+    : endpoint === '/bench' ? reply() : {} })
+  const draw = () => app.draw(app.api.SettingsPage, { t: app.t })
+  const model = { id: 'fixture', name: 'Fixture', availability: 'unknown' }
+  const card = bench => flatten(app.api.ModelCard({ model, t: app.t, bench, onBench() {} }))
+  draw(); await tick(); const tree = draw()
+  const first = tree.props.bench(model)
+  await tree.props.bench(model)
+  assert.equal(app.calls.filter(call => call.endpoint === '/bench').length, 1)
+  let state = draw().props.benches.fixture
+  assert.equal(state.running, true)
+  assert.ok(card(state).some(node => node?.props?.disabled === true && node.children.includes(app.t('bench.running'))))
+  complete({ text: 'Previous response', ttftMs: 1, persisted: true })
+  await first; await tick()
+  assert.equal(draw().props.benches.fixture.response, 'Previous response')
+
+  reply = () => new Promise(resolve => { complete = resolve })
+  const retry = draw().props.bench(model)
+  state = draw().props.benches.fixture
+  assert.equal(state.response, undefined, 'a pending request cannot show an old answer as its result')
+  complete({ httpOk: false, error: 'Provider quota exhausted' })
+  await retry; await tick()
+  state = draw().props.benches.fixture
+  assert.equal(state.running, false)
+  assert.equal(state.response, undefined)
+  assert.ok(card(state).some(node => node?.props?.role === 'alert' && node.children.includes('Provider quota exhausted')))
+  assert.ok(card(state).includes(app.t('bench.failureHint')))
+  assert.ok(card(state).some(node => node?.props?.disabled === false && node.children.includes(app.t('bench.run'))))
+
+  reply = () => ({ text: 'New response', ttftMs: 2, persisted: true })
+  await draw().props.bench(model); await tick()
+  state = draw().props.benches.fixture
+  assert.equal(state.response, 'New response')
+  assert.equal(state.failed, undefined)
+  assert.ok(!card(state).some(node => node?.props?.role === 'alert'))
+  app.dispose()
 })
 
 const shellProps = app => ({ t: app.t, data: { catalog: [], settings: {} }, counts: {}, summary: {}, stats: {} })

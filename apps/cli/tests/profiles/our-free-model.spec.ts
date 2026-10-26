@@ -2,7 +2,8 @@
  * The source overlay must compose once and resolve both plugin halves against
  * this checkout. Public CLI output covers profile assembly; the isolated
  * Loader probe exposes registration and managed-update evidence that a config
- * dump cannot provide. No provider credentials or live inference are used.
+ * dump cannot provide. Model-call checks use a local OpenAI-compatible fixture;
+ * no provider credentials or live inference are used.
  */
 
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
@@ -42,11 +43,39 @@ const overlay = resolve('apps/cli/config/examples/our-free-model.patch.yml')
 const watchedFiles = ['index.js', 'client.js', 'package.json', 'src/updater.js']
 const hashes = () => watchedFiles.map(file => createHash('sha256').update(readFileSync(join(pluginDir, file))).digest('hex'))
 const before = hashes()
+const inference = process.env.DSH_OFM_SMOKE_INFERENCE === '1'
 const networkRequests = []
-const upstream = createServer((request, response) => {
-  assert.equal(request.method, 'GET', 'the smoke test must not request inference')
-  response.writeHead(200, { 'content-type': 'application/json' })
-  response.end(JSON.stringify({ data: [] }))
+const inferenceRequests = []
+const fixtureErrors = []
+const answer = 'Local model response received through Our Free Model.'
+const upstream = createServer(async (request, response) => {
+  try {
+    if (request.method === 'GET') {
+      response.writeHead(200, { 'content-type': 'application/json' })
+      response.end(JSON.stringify({ data: [] }))
+      return
+    }
+    assert.equal(inference, true, 'the registration smoke must not request inference')
+    assert.equal(request.method, 'POST')
+    assert.equal(request.url, '/v1/chat/completions')
+    assert.equal(request.headers.authorization, undefined, 'a local provider needs no credential')
+    let raw = ''
+    for await (const chunk of request) raw += chunk
+    const body = JSON.parse(raw)
+    inferenceRequests.push(body)
+    assert.equal(body.model, 'fixture-model', 'the provider prefix must not reach the model server')
+    assert.equal(body.stream, true)
+    response.writeHead(200, { 'content-type': 'text/event-stream' })
+    for (const frame of [
+      { choices: [{ index: 0, delta: { content: answer } }] },
+      { choices: [{ index: 0, delta: {}, finish_reason: 'stop' }], usage: { prompt_tokens: 5, completion_tokens: 10 } },
+    ]) response.write('data: ' + JSON.stringify(frame) + '\n\n')
+    response.end('data: [DONE]\n\n')
+  } catch (error) {
+    fixtureErrors.push(String(error))
+    response.writeHead(500, { 'content-type': 'application/json' })
+    response.end(JSON.stringify({ error: 'local model fixture rejected the request' }))
+  }
 })
 await new Promise(resolve => upstream.listen(0, '127.0.0.1', resolve))
 const upstreamOrigin = 'http://127.0.0.1:' + upstream.address().port
@@ -124,6 +153,46 @@ try {
   const announcements = await api('/announcements')
   assert.equal(announcements.body.source, 'managed')
   assert.deepEqual(announcements.body.items, [])
+  if (inference) {
+    const saved = await api('/providers', 'POST', {
+      providerId: 'lmstudio', enabled: true,
+      baseUrl: upstreamOrigin + '/v1', models: ['fixture-model'],
+    })
+    assert.equal(saved.status, 200, JSON.stringify(saved.body))
+    const model = 'lmstudio/fixture-model'
+    const models = await ctx.llm.listModels('our-free-model')
+    assert.ok(models.some(row => row.id === model), 'the registered Harness provider must advertise the configured model')
+
+    const tested = await api('/bench', 'POST', { model })
+    assert.equal(tested.status, 200, JSON.stringify(tested.body))
+    assert.equal(tested.body.ok, true)
+    assert.equal(tested.body.model, model)
+    assert.equal(tested.body.text, answer, 'the text-test API must return the actual model response')
+    assert.equal(tested.body.outputTokens, 10)
+    assert.equal(tested.body.persisted, true)
+    assert.equal(inferenceRequests.length, 1)
+    assert.ok(JSON.stringify(inferenceRequests[0].messages).includes('Reply with exactly: OK'))
+    const availability = JSON.parse(readFileSync(join(home, 'our-free-model/availability.json'), 'utf8'))
+    assert.equal(availability.manualResults[model].state, 'available')
+
+    const chunks = []
+    for await (const chunk of ctx.llm.stream({
+      provider: 'our-free-model', model,
+      messages: [{ role: 'user', content: [{ type: 'text', text: 'Say hello from the Harness model picker.' }] }],
+      maxTokens: 64,
+    })) chunks.push(chunk)
+    assert.equal(chunks.filter(chunk => chunk.type === 'text-delta').map(chunk => chunk.text).join(''), answer)
+    assert.equal(chunks.filter(chunk => chunk.type === 'finish').length, 1)
+    assert.equal(chunks.at(-1).reason.kind, 'stop')
+    assert.equal(inferenceRequests.length, 2, 'text test and normal Harness calls must each reach the configured server once')
+    assert.ok(JSON.stringify(inferenceRequests[1].messages).includes('Say hello from the Harness model picker.'))
+
+    const missing = await api('/bench', 'POST', { model: 'lmstudio/missing-model' })
+    assert.equal(missing.status, 404)
+    assert.equal(inferenceRequests.length, 2, 'an unknown model must fail before sending a model call')
+    console.log('OUR_FREE_MODEL_INFERENCE_OK')
+  }
+  assert.deepEqual(fixtureErrors, [])
   assert.ok(networkRequests.every(url => new URL(url).origin === upstreamOrigin))
   assert.deepEqual(hashes(), before, 'managed actions must not rewrite the source checkout')
   console.log('OUR_FREE_MODEL_INTEGRATION_OK')
@@ -168,7 +237,10 @@ describe('Our Free Model source integration', () => {
     }
   }, LOADER_SMOKE_TEST_TIMEOUT_MS)
 
-  it('loads both halves and the shipped account pack against the current kernel without self-updating', async () => {
+  it.each([
+    { behavior: 'loads both halves and the shipped account pack without self-updating', inference: false },
+    { behavior: 'returns text tests and streams Harness model calls through the configured local provider', inference: true },
+  ])('$behavior', async ({ inference }) => {
     const home = await mkdtemp(join(tmpdir(), 'dsh-ofm-runtime-'))
     try {
       const probe = join(home, 'probe.mjs')
@@ -178,7 +250,7 @@ describe('Our Free Model source integration', () => {
         mode: 'src',
         sourceImport: 'tsx/esm',
         tsconfigPath: join(root, 'tsconfig.json'),
-        env: { DSH_HOME: home },
+        env: { DSH_HOME: home, DSH_OFM_SMOKE_INFERENCE: inference ? '1' : '0' },
       })
       const result = await execa(launch.command, launch.args, {
         cwd: root,
@@ -192,6 +264,7 @@ describe('Our Free Model source integration', () => {
       expect(result.signal, diagnostic).toBeUndefined()
       expect(result.exitCode, diagnostic).toBe(0)
       expect(result.stdout).toContain('OUR_FREE_MODEL_INTEGRATION_OK')
+      if (inference) expect(result.stdout).toContain('OUR_FREE_MODEL_INFERENCE_OK')
     } finally {
       await rm(home, { recursive: true, force: true })
     }

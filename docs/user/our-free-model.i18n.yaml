@@ -6,20 +6,41 @@
   en: 5e671f29a8ff834f
   zh: 36ecd5a6a260e6a4
 /experiment-with-harness-and-our-free-model/summary:
-  en: 025aabf5ae1e91cf
-  zh: f308b518a50af78e
+  en: 8419fc83524aa37d
+  zh: ef708b6bfd0a2737
 /experiment-with-harness-and-our-free-model/contents:
-  en: 2d6f829ec60aade5
-  zh: 13c6af365865efd1
+  en: 7e02228dc622dd62
+  zh: 8a9428a55bb6fdb9
+/experiment-with-harness-and-our-free-model/prerequisites:
+  en: de5c92ba75107d37
+  zh: 2778c1e53fb35fe2
 /experiment-with-harness-and-our-free-model/start-the-combined-application:
-  en: 8e9f9b2a979e5fb8
-  zh: 51af29f7a9e996f5
+  en: 8cfa4bc24c47a2e9
+  zh: 70d6ea61559919d9
+/experiment-with-harness-and-our-free-model/make-a-first-call-and-start-a-conversation:
+  en: b7d9ce92f1e4266a
+  zh: 7d715af0c74a52ae
+/experiment-with-harness-and-our-free-model/connect-a-local-model:
+  en: 4bd0ace2dcc1e4fe
+  zh: 1bfdce3f48d700c1
+/experiment-with-harness-and-our-free-model/connect-an-api-key-provider:
+  en: 2f06d474f891e1cb
+  zh: 50b4a4e8c1e1c90b
+/experiment-with-harness-and-our-free-model/use-the-plugin-from-another-app:
+  en: 291d164fa0fd2fbd
+  zh: 09958413d31ea6d9
+/experiment-with-harness-and-our-free-model/feature-setup-reference:
+  en: 6931fa43d7a2b5f0
+  zh: c776065218a0f428
+/experiment-with-harness-and-our-free-model/troubleshooting:
+  en: 2ae0751cb35b5c37
+  zh: f7000985f76a13be
 /experiment-with-harness-and-our-free-model/edit-and-check:
-  en: cbd3c1513ad437b1
-  zh: c0981fa1b2ebd064
+  en: f84f9475e9678d57
+  zh: 00071f978ada8279
 /experiment-with-harness-and-our-free-model/source-and-update-ownership:
-  en: 90af7811c7040687
-  zh: 66c6566f575a905d
+  en: babe05789a6bd9eb
+  zh: d595f24eefac21b4
 /experiment-with-harness-and-our-free-model/limitations:
-  en: f5da279b0054f83a
-  zh: 65f4c682b071623a
+  en: f38493040969c1cf
+  zh: 8a22bb26607b464b

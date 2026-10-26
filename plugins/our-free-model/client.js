@@ -250,8 +250,16 @@ window.__ModuleLoader__.load({
         'pref.egress': '当前出口',
         'pref.probedAt': '最近探测',
         'pref.measuredAt': '最近测量',
-        'bench.run': '测一次',
-        'bench.running': '测量中…',
+        'bench.run': '文本测试',
+        'bench.running': '测试中…',
+        'bench.tryTitle': '试用第一次模型调用',
+        'bench.tryHint': '选择下方模型并点击「文本测试」。这会实际调用所选模型，并使用该提供商的额度；此测试无需打开工作区。',
+        'bench.promptLabel': '测试提示词',
+        'bench.prompt': 'Reply with exactly: OK',
+        'bench.chatHint': '要发送自己的提示词，请回到 Harness，打开工作区并新建对话，在模型选择器中选择 Our Free Model 下的模型。',
+        'bench.response': '模型回复',
+        'bench.responseLimit': '预览最多显示 2,000 个字符。',
+        'bench.failureHint': '请检查此模型的账号授权、额度和网络连接，然后重新测试或选择其他模型。',
         'bench.notSaved': '结果未能保存，请检查数据目录；刷新后可能丢失。',
         'bench.result': '文本响应通过 · 首帧 {ttft}ms · 输出 {tps} tok/s · 推理 {reasoning} tok',
         'ann.preamble': '前言',
@@ -1023,8 +1031,16 @@ window.__ModuleLoader__.load({
         'pref.egress': 'Current egress',
         'pref.probedAt': 'Last probe',
         'pref.measuredAt': 'Last measurement',
-        'bench.run': 'Run once',
-        'bench.running': 'Measuring…',
+        'bench.run': 'Text test',
+        'bench.running': 'Testing…',
+        'bench.tryTitle': 'Try your first model call',
+        'bench.tryHint': 'Choose a model below and click Text test. This calls the selected model and uses the provider’s quota. No workspace is needed for this check.',
+        'bench.promptLabel': 'Test prompt',
+        'bench.prompt': 'Reply with exactly: OK',
+        'bench.chatHint': 'For your own prompt, return to Harness, open a workspace, start a chat and choose a model from Our Free Model.',
+        'bench.response': 'Response',
+        'bench.responseLimit': 'Preview: up to 2,000 characters.',
+        'bench.failureHint': 'Check this model’s account access, quota and network connection, then test again or choose another model.',
         'bench.notSaved': 'The result could not be saved. Check the data directory; it may be lost after refresh.',
         'bench.result': 'Text response passed · first frame {ttft}ms · {tps} tok/s · {reasoning} reasoning tokens',
         'ann.preamble': 'Preamble',
@@ -1660,6 +1676,7 @@ window.__ModuleLoader__.load({
 .ofm_metrics{display:flex;gap:12px;font-size:11px;color:var(--dsw-alias-label-tertiary);flex-wrap:wrap}
 .ofm_metrics b{color:var(--dsw-alias-label-secondary);font-weight:600;font-variant-numeric:tabular-nums}
 .ofm_note{font-size:11px;color:var(--dsw-alias-label-tertiary);line-height:1.5}
+.ofm_response{margin:0;padding:10px;max-height:240px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font-size:12px}
 /* ══ 面板 ══════════════════════════════════════════════════════════════ */
 .ofm_panel{padding:16px;border-radius:16px;border:1px solid var(--dsw-alias-border-l2);background:color-mix(in srgb,var(--dsw-alias-bg-layer-2) 82%,transparent);box-shadow:inset 0 1px 0 rgb(255 255 255 / 5%),0 2px 6px rgb(0 0 0 / 4%);display:flex;flex-direction:column;gap:12px}
 .ofm_paneltitle{font-size:12px;font-weight:680;letter-spacing:.2px;color:var(--dsw-alias-label-secondary);display:flex;align-items:center;gap:8px}
@@ -3217,9 +3234,16 @@ window.__ModuleLoader__.load({
           h(Switch, { checked: m.hiddenByUser !== true, label: t('visibility.showModel'),
             disabled: busy || m.hiddenByGroup === true, onChange: () => onVisibility(m) }),
           m.hiddenByGroup === true ? h('p', { className: 'ofm_note' }, t('visibility.groupHidden')) : null),
-        onBench === undefined ? null : h('div', { className: 'ofm_row' },
-          h(Button, { disabled: bench?.running === true, onClick: () => onBench(m) }, bench?.running === true ? t('bench.running') : t('bench.run')),
-          bench?.result === undefined ? null : h('span', { className: 'ofm_note' }, bench.result)))
+        onBench === undefined ? null : h('div', { className: 'ofm_sec', 'aria-busy': bench?.running === true ? 'true' : 'false' },
+          h('div', { className: 'ofm_row' },
+            h(Button, { disabled: bench?.running === true, onClick: () => onBench(m) }, bench?.running === true ? t('bench.running') : t('bench.run'))),
+          h('div', { className: 'ofm_note', role: bench?.failed === true ? 'alert' : 'status' },
+            bench?.running === true ? t('bench.running') : bench?.result),
+          bench?.failed === true ? h('p', { className: 'ofm_note' }, t('bench.failureHint')) : null,
+          bench?.response === undefined ? null : h('section', { className: 'ofm_sec', 'aria-label': t('bench.response') + ': ' + m.name },
+            h('b', null, t('bench.response')),
+            h('pre', { className: 'ofm_response' }, bench.response),
+            h('span', { className: 'ofm_note' }, t('bench.responseLimit')))))
     }
 
     function Roster(props) {
@@ -3252,7 +3276,7 @@ window.__ModuleLoader__.load({
           h('div', { className: 'ofm_grid' }, list.map(m => h(ModelCard, {
             key: m.id, model: m, t, onBench, locked: m.channel === 'eac' && locked, eacLogin,
             onVisibility: toggleModel, busy,
-            bench: { running: benches[m.id]?.running === true, ...benches[m.id]?.result === undefined ? {} : { result: benches[m.id].result } },
+            bench: benches[m.id],
           }))))
       // The lane closed at the gate is the one "no EAC models" case the page can
       // explain without a log (issue #60): on a host the kernel gave no profile,
@@ -3261,6 +3285,12 @@ window.__ModuleLoader__.load({
         ? h('p', { className: 'ofm_note' }, t('roster.noLane')) : null
       return h(Fragment, null,
         laneNote,
+        onBench === undefined ? null : h('div', { className: 'ofm_callout' },
+          h('div', { className: 'ofm_sec' },
+            h('b', null, t('bench.tryTitle')),
+            h('p', { className: 'ofm_note' }, t('bench.tryHint')),
+            h('div', { className: 'ofm_note' }, t('bench.promptLabel'), ': ', h('code', null, t('bench.prompt'))),
+            h('p', { className: 'ofm_note' }, t('bench.chatHint')))),
         onApply === undefined ? null : h('div', { className: 'ofm_sec' },
           h('p', { className: 'ofm_note' }, t('visibility.hint')),
           h(Switch, { checked: summary.settings.hideFreeModels === true, disabled: busy,
@@ -6762,6 +6792,7 @@ window.__ModuleLoader__.load({
       const t = tagged
       const [busy, setBusy] = useState(false)
       const [benches, setBenches] = useState({})
+      const pendingBenches = useRef(new Set())
       const summary = useAsync(() => api('/summary'), [])
       const stats = useAsync(() => api('/stats'), [])
       // GitHub 授权状态由这一层持有：模型卡的锁标记与 EAC 面板必须看到同一个
@@ -6792,6 +6823,8 @@ window.__ModuleLoader__.load({
         } finally { setBusy(false) }
       }
       const bench = async model => {
+        if (pendingBenches.current.has(model.id)) return
+        pendingBenches.current.add(model.id)
         setBenches(current => ({ ...current, [model.id]: { running: true } }))
         try {
           // 默认档（balanced）而不是 deep：测速要回答的是“这个模型日常多快”，
@@ -6799,12 +6832,15 @@ window.__ModuleLoader__.load({
           // bench 会话自己打到 429。
           // The backend owns the 300s total budget; leave 30s for its final response.
           const result = await post('/bench', { model: model.id }, 330_000)
-          setBenches(current => ({ ...current, [model.id]: { running: false, result: t('bench.result').replace('{ttft}', result.ttftMs).replace('{tps}', result.tokensPerSecond ?? '—').replace('{reasoning}', result.reasoningTokens ?? '—') + (result.persisted === false ? ' · ' + t('bench.notSaved') : '') } }))
+          setBenches(current => ({ ...current, [model.id]: {
+            running: false, response: result.text,
+            result: t('bench.result').replace('{ttft}', result.ttftMs).replace('{tps}', result.tokensPerSecond ?? '—').replace('{reasoning}', result.reasoningTokens ?? '—') + (result.persisted === false ? ' · ' + t('bench.notSaved') : ''),
+          } }))
           summary.reload()
         } catch (error) {
-          setBenches(current => ({ ...current, [model.id]: { running: false, result: String(error?.message ?? error) } }))
+          setBenches(current => ({ ...current, [model.id]: { running: false, failed: true, result: String(error?.message ?? error) } }))
           summary.reload()
-        }
+        } finally { pendingBenches.current.delete(model.id) }
       }
 
       if (summary.status === 'loading' && summary.data === undefined) return h('div', { className: 'ofm_root' }, h('p', { className: 'ofm_note' }, t('loading')))
